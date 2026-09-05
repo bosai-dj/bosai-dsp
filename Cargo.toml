@@ -12,12 +12,19 @@ keywords = ["dsp", "audio", "dj", "effects", "delay"]
 categories = ["multimedia::audio"]
 exclude = ["/.github"]
 
+# No dependencies. Not a runtime one, not a dev one — the test suite uses only
+# std. CI proves it by checking the dependency tree is empty.
 [dependencies]
 
 [dev-dependencies]
-approx = "0.5"
 
 [profile.release]
 opt-level = 3
 lto = "fat"
 codegen-units = 1
+
+# docs.rs builds independently of CI, so it gets the same rustdoc flags the docs job
+# uses — otherwise a link that fails there passes here and the published docs are broken.
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]

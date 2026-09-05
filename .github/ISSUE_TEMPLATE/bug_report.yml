@@ -1,0 +1,43 @@
+name: Bug report
+description: An effect clicks, drifts off the beat, or sounds wrong
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: bosai-dsp version
+      placeholder: "0.1.0"
+    validations: { required: true }
+  - type: dropdown
+    id: module
+    attributes:
+      label: Which effect
+      options:
+        - echo
+        - ping_pong
+        - roll_fx
+        - gater
+        - filter_fx
+        - flanger / phaser / peak_filter
+        - reverb
+        - eq_chain
+        - a primitive (biquad, svf, smoother, resample)
+    validations: { required: true }
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what you heard
+      description: >-
+        Audio bugs are hard to describe and easy to demonstrate. Sample rate, BPM and
+        beat value are usually the whole story — timing bugs tend to live in the
+        fractional frame count, so the exact numbers matter more than round ones.
+    validations: { required: true }
+  - type: textarea
+    id: repro
+    attributes:
+      label: A test that reproduces it, if you can write one
+      description: >-
+        Every module here is unit-tested against a synthetic buffer with no audio device
+        involved. Copying the shape of an existing test in the same file is usually
+        enough, and turns this into ten minutes instead of an afternoon.
+      render: rust

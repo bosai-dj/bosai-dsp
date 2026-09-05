@@ -1,0 +1,90 @@
+name: Release
+
+# Publishing a GitHub Release is the gate. Not a tag push: a tag is cheap to create by
+# accident and impossible to take back once it has reached crates.io, whereas a Release
+# is a deliberate act with the notes in front of you.
+#
+# The `crates-io` environment below is the second gate, and the stronger one — it pauses
+# the run BEFORE the OIDC token is minted. Add a required reviewer to it in repo settings
+# to make that pause a human one.
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+      - run: cargo test --all-targets
+      # The tag is the only place the version is stated twice. Publishing v0.2.0 from a
+      # tree that still says 0.1.9 yields a crates.io release nobody can explain later.
+      - name: tag matches the manifest version
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          manifest="$(cargo metadata --no-deps --format-version 1 \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin)["packages"][0]["version"])')"
+          if [ "$TAG" != "v${manifest}" ]; then
+            echo "::error::release tag ${TAG} does not match Cargo.toml version ${manifest}"
+            exit 1
+          fi
+      - run: cargo package
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: crate
+          path: target/package/*.crate
+
+  publish:
+    needs: [verify]
+    runs-on: ubuntu-latest
+    environment:
+      name: crates-io
+      url: https://crates.io/crates/bosai-dsp
+    # `id-token: write` is what mints the OIDC token. It is scoped to this job alone so
+    # nothing else in the workflow runs while the publishing identity is available.
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+      # Trusted Publishing — crates.io exchanges the workflow's OIDC identity for a token
+      # valid under an hour. No API token exists in repo secrets to leak or rotate. The
+      # action revokes the token in its post step. Requires the crate to be configured
+      # for Trusted Publishing on crates.io first; see CONTRIBUTING.md.
+      - uses: rust-lang/crates-io-auth-action@c6f97d42243bad5fab37ca0427f495c86d5b1a18 # v1.0.5
+        id: auth
+      - run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+  # Its own job so `publish` keeps `id-token: write` as its ONLY permission —
+  # `contents: write` has no business sitting alongside the publishing identity.
+  attach-artifacts:
+    needs: [publish]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: crate
+          path: dist/
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" dist/* --repo "${GITHUB_REPOSITORY}" --clobber

@@ -1,0 +1,95 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege by default. Naming ANY permission sets every unnamed one to `none`,
+# so a job needing more must say so explicitly rather than inheriting it.
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Both ends of the supported range. `rust-version` in Cargo.toml is a promise,
+        # and an untested floor is how a 1.80-only method reaches someone on 1.74 whose
+        # first news of it is a build failure. Testing only the floor is how the version
+        # everyone is actually on goes unexercised.
+        rust: ['1.74', stable]
+    steps:
+      # Actions are pinned to a full-length commit SHA — the only way to consume one
+      # immutably; a tag can be moved under you. The trailing comment is the human-
+      # readable version, and Dependabot rewrites both together.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Without this the job's GITHUB_TOKEN is left in .git/config where any later
+          # step — or anything they invoke — can read it.
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          toolchain: ${{ matrix.rust }}
+      - run: cargo test --all-targets
+
+  # Separate job, and the reason the crate can claim what it claims. bosai-dsp has no
+  # dependencies — not runtime, not dev — so the test job compiles nothing it does not
+  # own. Asserting it here means the claim cannot rot silently the first time someone
+  # reaches for a convenience crate in a test.
+  no-dependencies:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+      - name: dependency tree is only this crate
+        run: |
+          tree="$(cargo tree -e normal,build,dev --prefix none | tail -n +2 | tr -d '[:space:]')"
+          if [ -n "$tree" ]; then
+            echo "::error::bosai-dsp advertises zero dependencies but the tree is not empty:"
+            cargo tree -e normal,build,dev
+            exit 1
+          fi
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+        with:
+          components: clippy
+      - run: cargo clippy --all-targets -- -D warnings
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+      # docs.rs builds independently of this repo, so a broken intra-doc link is
+      # otherwise found only after the version is published and unrepublishable.
+      - run: cargo doc --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
+
+  # `cargo publish` refuses for reasons that have nothing to do with the code compiling:
+  # missing metadata, a path dependency, a file the package excludes. Finding that at
+  # release time means the version number is already spent.
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+      - run: cargo publish --dry-run

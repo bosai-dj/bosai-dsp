@@ -1,5 +1,11 @@
 # bosai-dsp
 
+[![tests](https://github.com/bosai-dj/bosai-dsp/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/bosai-dj/bosai-dsp/actions/workflows/ci.yml)
+[![crates.io](https://img.shields.io/crates/v/bosai-dsp?cacheSeconds=300)](https://crates.io/crates/bosai-dsp)
+[![docs.rs](https://img.shields.io/docsrs/bosai-dsp?cacheSeconds=300)](https://docs.rs/bosai-dsp)
+[![MSRV](https://img.shields.io/badge/MSRV-1.74-blue.svg)](Cargo.toml)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Beat-synced DJ effects in pure Rust. No dependencies, no allocation on the audio path.
 
 Effects modelled on the Beat FX section of a professional DJ mixer — where time is
@@ -81,6 +87,10 @@ a +3 dB bump at each crossover frequency. There is a test asserting flatness at
 
 The API is not yet stable — `0.1` means the DSP is tested and working, not that
 the surface is settled. Feedback on the interface is very welcome before `1.0`.
+
+Minimum supported Rust version is 1.74, tested in CI alongside stable.
+See [CONTRIBUTING.md](CONTRIBUTING.md) to build on it, and [SECURITY.md](SECURITY.md)
+to report a vulnerability.
 
 ## Credits
 
