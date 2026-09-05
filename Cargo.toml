@@ -1,0 +1,23 @@
+[package]
+name = "bosai-dsp"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.74"
+description = "Beat-synced DJ effects (echo, ping-pong, roll, gater, filter FX) with BPM-derived timing"
+license = "MIT"
+repository = "https://github.com/bosai-dj/bosai-dsp"
+documentation = "https://docs.rs/bosai-dsp"
+readme = "README.md"
+keywords = ["dsp", "audio", "dj", "effects", "delay"]
+categories = ["multimedia::audio"]
+exclude = ["/.github"]
+
+[dependencies]
+
+[dev-dependencies]
+approx = "0.5"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
