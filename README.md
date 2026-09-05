@@ -77,8 +77,7 @@ a +3 dB bump at each crossover frequency. There is a test asserting flatness at
 
 ## Status
 
-`0.1.0`. 93 tests, zero clippy warnings. Extracted from [bosai][b], an AI DJ agent
-that drives a Pioneer DDJ-FLX4, where this code runs the live audio path.
+`0.1.0`. 93 tests, zero clippy warnings.
 
 The API is not yet stable — `0.1` means the DSP is tested and working, not that
 the surface is settled. Feedback on the interface is very welcome before `1.0`.
@@ -95,4 +94,3 @@ MIT
 [st]: https://crates.io/crates/stratum-dsp
 [mx]: https://github.com/mixxxdj/mixxx
 [fv]: https://github.com/irh/freeverb-rs
-[b]: https://github.com/bosai-dj
