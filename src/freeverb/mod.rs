@@ -1,10 +1,10 @@
 //! Freeverb — a Rust implementation of the public-domain Freeverb reverb algorithm.
 //!
-//! Vendored from https://github.com/irh/freeverb-rs (MIT License, © 2018 Ian Hobson).
+//! Vendored from <https://github.com/irh/freeverb-rs> (MIT License, © 2018 Ian Hobson).
 //! The original Freeverb C++ implementation was written by "Jezar at Dreampoint"
 //! and released into the public domain in June 2000.
 //!
-//! See https://ccrma.stanford.edu/~jos/pasp/Freeverb.html for algorithm analysis.
+//! See <https://ccrma.stanford.edu/~jos/pasp/Freeverb.html> for algorithm analysis.
 //!
 //! ============================================================================
 //! MIT License
