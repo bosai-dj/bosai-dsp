@@ -18,9 +18,7 @@ impl BiquadState {
     }
 
     pub fn reset(&mut self) {
-        for z in &mut self.z {
-            *z = [0.0; 2];
-        }
+        self.z.fill([0.0; 2]);
     }
 }
 
